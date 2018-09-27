@@ -1,0 +1,42 @@
+/*
+ * Interrupt_Timer.c
+ *
+ *  Created on: Sep 27, 2018
+ *      Author: colby
+ */
+
+#include <msp430.h>
+
+ButtonInt()
+{
+       P1OUT = 0; // Sets all output register bits to 0
+
+       P1SEL &= (~BIT0 & ~BIT3);
+       P1DIR |= BIT0; // configure P1.0 as output
+       P1DIR &= ~BIT3; // configure P1.3 as input
+
+       P1REN |= BIT3;  // Enable Pullup/down Resistor for SW1
+       P1OUT |= BIT3;  // Sets resistor to pull up
+
+       P1IE |= BIT3;   // Enable interrupt for button (P1.3)
+       P1IES |= BIT3;  // P1.3 Hi/Lo edge
+
+       P1IFG &= ~BIT3; // Clears interrupt flag for button press
+       __bis_SR_register(CPUOFF + GIE);  // MSP goes in LPM0
+
+
+       while(1) // Do nothing until interrupt occurs
+       {}
+}
+
+  #pragma vector=PORT1_VECTOR
+__interrupt void Port_1(void) // If interrupt, button press, occurs ...
+    {
+      P1OUT ^= BIT0; // Toggles LED
+      P1IFG &= ~BIT3; // Clear interrupt flag
+    }
+
+
+// Timerblink()
+
+// ButtonBasedDelay()
