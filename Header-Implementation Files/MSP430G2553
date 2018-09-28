@@ -5,9 +5,11 @@
  *      Author: colby
  */
 
+// Implementation file for MSP430G2553 board
+
 #include <msp430.h>
 
-ButtonInt()
+ButtonInt() 
 {
        P1OUT = 0; // Sets all output register bits to 0
 
@@ -37,6 +39,35 @@ __interrupt void Port_1(void) // If interrupt, button press, occurs ...
     }
 
 
-// Timerblink()
 
-// ButtonBasedDelay()
+Timerblink(unsigned int freq) 
+{
+    P1OUT = 0; // Sets all output register bits to 0
+
+    P1SEL &= (~BIT0 & ~BIT6);
+
+
+    P1DIR |= (BIT0 | BIT6); // configure P1.0 as output
+
+    CCTL0 = CCIE; // Capture Compare - Interrupt Enable
+
+    BCSCTL3 = LFXT1S_2;
+
+    TA0CTL = TASSEL_1 + MC_1 + ID_0;  // Timer is set in up mode mode (ACLK)
+
+    TACCR0 = 32768/freq; // Half of ACLK cycle divided by requested frequency
+                             // ACLK divided in half to account time LED is on and off
+
+    __bis_SR_register(CPUOFF + GIE);  // MSP goes in LPM0
+
+     while(1)
+     {}
+}
+
+#pragma vector=TIMER0_A0_VECTOR
+__interrupt void Timer_A0(void)
+{
+   P1OUT ^= (BIT0 | BIT6);
+}
+
+
