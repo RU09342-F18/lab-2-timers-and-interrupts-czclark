@@ -5,14 +5,14 @@
  *      Author: colby
  */
 
+// Must compile corresponding implementation file to run (Interrupt_Timer.c)
+
 #ifndef INTERRUPT_TIMER_H_
 #define INTERRUPT_TIMER_H_
 
-void ButtonInt();
+void ButtonInt(void); // Uses button interrupt to blink an LED
 
-void Timerblink(freq); Must specify a frequency
-
-void ButtonBasedDelay();
-
+void Timerblink(unsigned int freq); // Blinks an LED according to a specified frequency using a Timer 
+                                    // Must specify a frequency, precompilation, to use function
 
 #endif /* INTERRUPT_TIMER_H_ */
