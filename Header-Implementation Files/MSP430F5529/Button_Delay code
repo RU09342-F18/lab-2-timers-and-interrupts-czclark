@@ -1,0 +1,64 @@
+#include <msp430.h> 
+
+ButtonBasedDelay()
+{
+       P1OUT = 0; // Sets all output register bits to 0
+
+       P1SEL &= (~BIT0 & ~BIT1); // Sets P1.0 and P1.1 as GPIO
+
+
+       P1DIR |= BIT0; // configure P1.0 as output
+       P1DIR &= ~BIT1; // configure P1.1(button) as input
+
+       P1REN |= BIT1;  // Enable Pullup/down Resistor for SW1
+       P1OUT |= BIT1;  // Sets resistor to pull up
+
+       TA0CCTL0 = CCIE; // Capture Compare - Interrupt Enable
+
+       P1IE |= BIT1;   // Enable interrupt for button (P1.1)
+       P1IES |= BIT1;  // P1.1 Hi/Lo edge
+       P1IFG &= ~BIT1; // Clears interrupt flag for button press
+
+       TA0CTL = TASSEL_1 + MC_1 + ID_0;  // Timer is set in up mode (ACLK)
+
+       TA0CCR0 = (32768)/10; // Sets Timer frequency to 10Hz
+                              // ACLK divided in half to account time LED is on and off
+
+
+       __bis_SR_register(CPUOFF + GIE);
+
+       while(1)
+       {}
+}
+
+#pragma vector=PORT1_VECTOR
+__interrupt void Port_1(void) // If interrupt, button press, occurs ...
+  {
+    if(P1IES & BIT1)
+       {
+            P1IFG &= ~BIT1;
+
+            P1IES &= ~BIT1; // Sets button interrupt to Lo/High edge
+
+            TA0CTL = TACLR; // Clears current Timer setup
+            TA0CTL = TASSEL_1 + MC_2 + ID_0; // Sets timer to continuous mode
+       }
+     else
+       {
+            TA0CTL = TASSEL_1 + MC_0 +ID_0;
+            P1IFG &= ~BIT1; // Resets interrupt for button
+
+            TA0CCR0 = TA0R;   // Store time in TAR register to CCR
+                             // TAR keeps track of time that has passed
+
+            P1IES |= BIT1; // Set button interrupt to High/Lo edge
+
+            TA0CTL = TASSEL_1 + MC_1 + ID_0; // Set
+       }
+  }
+
+#pragma vector=TIMER0_A0_VECTOR
+__interrupt void Timer_A0(void)
+{
+   P1OUT ^= BIT0;
+}
