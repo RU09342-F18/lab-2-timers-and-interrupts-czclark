@@ -1,1 +1,75 @@
-j
+/*
+ * Interrupt_Timer.c
+ *
+ *  Created on: Sep 27, 2018
+ *      Author: colby
+ */
+
+// Implementation file for MSP430G2553 board
+
+#include <msp430.h>
+
+ButtonInt()
+{
+       P1OUT = 0; // Sets all output register bits to 0
+
+       P1SEL &= (~BIT0 & ~BIT1); //configures P1.0 and P1.1 as GPIO
+
+       P1DIR |= BIT0; // configure P1.0 as output
+       P1DIR &= ~BIT1; // configure P1.1 as input
+
+       P1REN |= BIT1;  // Enable Pullup/down Resistor for SW1
+       P1OUT |= BIT1;  // Sets resistor to pull up
+
+       P1IE |= BIT1;   // Enable interrupt for button (P1.3)
+       P1IES |= BIT1;  // P1.1 Hi/Lo edge
+
+       P1IFG &= ~BIT1; // Clears interrupt flag for button press
+       __bis_SR_register(CPUOFF + GIE);  // MSP goes in LPM0
+
+
+       while(1) // Do nothing until interrupt occurs
+       {}
+}
+
+  #pragma vector=PORT1_VECTOR
+__interrupt void Port_1(void) // If interrupt, button press, occurs ...
+    {
+      P1OUT ^= BIT0; // Toggles LED
+      P1IFG &= ~BIT1; // Clear interrupt flag
+    }
+
+
+
+Timerblink(unsigned int freq) // Function parameter required.
+                              // Set frequency in Hz
+{
+    P1OUT = 0; // Sets all output register bits to 0
+    P4OUT = 0;
+
+    P1SEL &= (~BIT0);
+    P4SEL &= (~BIT7);
+
+
+    P1DIR |= BIT0; // configure P1.0 as output
+
+    P4DIR |= BIT7; // configure P4.7 as output
+
+    TA0CCTL0 = CCIE; // Capture Compare - Interrupt Enable
+
+    TA0CTL = TASSEL_1 + MC_1 + ID_0;  // Timer is set in up mode mode (ACLK)
+
+    TA0CCR0 = 32768/freq; // Half of ACLK cycle divided by requested frequency
+
+    __bis_SR_register(CPUOFF + GIE);  // MSP goes in LPM0
+
+     while(1) // Tells processor to do nothing until interrupt occurs
+     {}
+}
+
+#pragma vector=TIMER0_A0_VECTOR
+__interrupt void Timer_A0(void)
+{
+   P1OUT ^= BIT0;
+   P4OUT ^= BIT7;
+}
