@@ -2,7 +2,7 @@
 // Had to make a new file for button based delay because of interrupt conflicts
 // I just put the file directly into main
 
-void ButtonBasedDelay(void) 
+void ButtonBasedDelay(void)
 {
        P1OUT = 0; // Sets all output register bits to 0
 
@@ -22,15 +22,14 @@ void ButtonBasedDelay(void)
        P1IFG &= ~BIT3; // Clears interrupt flag for button press
 
 
-       BCSCTL3 = LFXT1S_2; // Needed for ACLK to function
-                           // Connects ACLK to internal oscillator
+       BCSCTL3 = LFXT1S_2;
 
        TA0CTL = TASSEL_1 + MC_1 + ID_0;  // Timer is set in up mode (ACLK)
 
        TACCR0 = (32768)/10; // Sets Timer frequency to 10Hz
 
 
-       __bis_SR_register(CPUOFF + GIE); // Enter LPM0
+       __bis_SR_register(CPUOFF + GIE);
 
        while(1)
        {}
@@ -39,26 +38,29 @@ void ButtonBasedDelay(void)
 #pragma vector=PORT1_VECTOR
 __interrupt void Port_1(void) // If interrupt, button press, occurs ...
   {
-     if(P1IES & BIT3)
+    if(P1IES & BIT3)
        {
-            P1IFG &= ~BIT3; // Clears button interrupt flag
-
             P1IES &= ~BIT3; // Sets button interrupt to Lo/High edge
+            P1IFG &= ~BIT3;
 
             TA0CTL = TACLR; // Clears current Timer setup
-            TA0CTL = TASSEL_1 + MC_2 + ID_0; // Sets timer to continuous mode
+            TA0CTL = TASSEL_1 + MC_2 + ID_3; // Sets timer to continuous mode
+                                             // I include the internal divider, because it reduces the clock frequency
+                                             // By lowering the clock frequency, more time can be held in TA0R
        }
      else
        {
-            TA0CTL = TASSEL_1 + MC_0 +ID_0;
-            P1IFG &= ~BIT3;
-            TACCR0 = TA0R;   // Store time in TAR register to CCR
-                             // TAR keeps track of clock pulses as timer runs
-
+            TA0CTL = TASSEL_1 + MC_0 + ID_0;
             P1IES |= BIT3; // Set button interrupt to High/Lo edge
+            P1IFG &= ~BIT3;
 
-            TA0CTL = TASSEL_1 + MC_1 + ID_0; // Set Timer back to "up mode"
+            TACCR0 = TA0R;   // Store time in TAR register to CCR
+                             // TAR keeps track of number of clock cycles
+
+            TA0CTL = TASSEL_1 + MC_1 + ID_3; // Set timer back to up mode
+                                             // Include divider, so that counter counts at the same frequency recorded
        }
+
   }
 
 #pragma vector=TIMER0_A0_VECTOR
