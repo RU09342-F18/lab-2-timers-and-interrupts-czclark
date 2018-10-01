@@ -1,12 +1,6 @@
 # Button Based Delay
-Now that you have begun to familiarize yourself with the TIMER modules, why don't we make an interesting change to our code from the last lab.
 
-## Task
-Setup your microcontroller to initially blink and LED at a rate of 10Hz upon restarting or powering up. Then utilizing one of the buttons on board, a user should be able to set the delay or blinking rate of the LED by holding down a button. The duration in which the button is depressed should then become the new rate at which the LED blinks. As previously stated, you most likely will want to take advantage of the fact that TIMER modules exist and see if you can let them do a bulk of the work for you.
+In order to implement the button based delay on the MSP, you must cycle through 3 stages. The first stage is to just to set the LED to blink at a certain frequency (initially). This can be done the way discussed in the second part of the quiz. By setting an interrupt to trigger at a button "press" (using PxIE and PxIES |= BITn), you can enter the second stage for recording the time the button is pressed. The interrupt for the button is reset and configured to trigger upon the buttons release (PxIES &= BITn). The timer is also reset and more importantly TAxR is cleared. Once TAxR is clear, the timer is configured in continuous mode and stays there until the next interrupt 
+(the button's release). 
 
-### Extra Work
-## Reset Button
-What is a piece of electronics without a reset button? Instead of relying on resetting your processor using the built in reset circuitry, why not instead use another button to reset the rate back to 10Hz.
-
-## Button Based Hertz
-Most likely using two buttons, what if instead of making a delay loop based on the time, the user could instead enter a mode where the number of times they pressed the button would become the number in Hz of the blinking rate? How do you think you would implement that with just one button?
+Just a note, by setting the divider on for some clock signal, the frequency of the clock signal can be reduced. I didn't realize this at first, but by doing you can increase the amount of time that can be recorded before your register overflows. By reducing the frequency more counts can be taken over a longer period of time, meaning less data stored in the TAxR register. This also reduces the precision of the time recorded, we are talking only microseconds of error.  
